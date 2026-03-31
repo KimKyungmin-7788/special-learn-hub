@@ -1,16 +1,84 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useMemo } from "react";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import AppSidebar from "@/components/AppSidebar";
+import AppHeader from "@/components/AppHeader";
+import HomeBanner from "@/components/HomeBanner";
+import CategoryGrid from "@/components/CategoryGrid";
+import ToolCard from "@/components/ToolCard";
+import { sampleTools } from "@/data/categories";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+export default function Index() {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredTools = useMemo(() => {
+    let tools = sampleTools;
+    if (selectedCategory) {
+      tools = tools.filter((t) => t.categoryId === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      tools = tools.filter(
+        (t) => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q)
+      );
+    }
+    return tools;
+  }, [selectedCategory, searchQuery]);
+
+  const isHome = !selectedCategory && !searchQuery.trim();
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} />
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <AppHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+
+          <main className="flex-1 p-6 space-y-8 overflow-auto">
+            {isHome && (
+              <>
+                <HomeBanner />
+                <CategoryGrid onSelectCategory={setSelectedCategory} />
+                <div>
+                  <h2 className="text-lg font-bold text-foreground mb-4">최신 추가 도구</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    {sampleTools.slice(0, 4).map((tool) => (
+                      <ToolCard key={tool.id} tool={tool} />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {!isHome && (
+              <div>
+                <h2 className="text-lg font-bold text-foreground mb-4">
+                  {selectedCategory
+                    ? `${sampleTools.find((t) => t.categoryId === selectedCategory) ? "" : ""}검색 결과`
+                    : "검색 결과"}
+                  {filteredTools.length > 0 && (
+                    <span className="text-muted-foreground font-normal text-sm ml-2">
+                      {filteredTools.length}개
+                    </span>
+                  )}
+                </h2>
+                {filteredTools.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    {filteredTools.map((tool) => (
+                      <ToolCard key={tool.id} tool={tool} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground py-12 text-center">
+                    해당하는 도구가 없습니다.
+                  </p>
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
-};
-
-const Index = PlaceholderIndex;
-
-export default Index;
+}
