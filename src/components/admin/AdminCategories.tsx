@@ -5,43 +5,116 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
+import { Pencil, Trash2, Plus, ChevronDown, FolderOpen } from "lucide-react";
+import { HexColorPicker } from "react-colorful";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-interface CategoryForm {
-  id: string;
-  name: string;
-  color: string;
-  bg_color: string;
-  parent: string;
-  sort_order: number;
+// --- HSL <-> Hex conversion helpers ---
+function hslStringToHex(hsl: string): string {
+  const m = hsl.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+  if (!m) return "#888888";
+  let h = parseInt(m[1]) / 360;
+  let s = parseInt(m[2]) / 100;
+  let l = parseInt(m[3]) / 100;
+  let r: number, g: number, b: number;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-const emptyForm: CategoryForm = {
-  id: "",
-  name: "",
-  color: "hsl(0,0%,50%)",
-  bg_color: "hsl(0,0%,95%)",
-  parent: "",
-  sort_order: 0,
-};
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  let r = parseInt(hex.slice(1, 3), 16) / 255;
+  let g = parseInt(hex.slice(3, 5), 16) / 255;
+  let b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s: number;
+  const l = (max + min) / 2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
 
-const PARENT_OPTIONS = [
-  { value: "", label: "없음 (독립)" },
-  { value: "basic", label: "기본교육과정" },
-  { value: "elective", label: "선택중심교육과정" },
-];
+function hexToHslString(hex: string): string {
+  const { h, s, l } = hexToHsl(hex);
+  return `hsl(${h},${s}%,${l}%)`;
+}
 
-export default function AdminCategories() {
-  const [form, setForm] = useState<CategoryForm>(emptyForm);
+function hexToBgHslString(hex: string): string {
+  const { h, s } = hexToHsl(hex);
+  return `hsl(${h},${s}%,93%)`;
+}
+
+// --- Color Picker Component ---
+function ColorPickerField({
+  label,
+  color,
+  onChange,
+}: {
+  label: string;
+  color: string;
+  onChange: (hex: string) => void;
+}) {
+  const hex = color.startsWith("#") ? color : hslStringToHex(color);
+  return (
+    <div className="space-y-1">
+      <label className="text-sm text-muted-foreground">{label}</label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="flex items-center gap-2 w-full h-9 px-3 rounded-md border border-input bg-background text-sm">
+            <div className="w-5 h-5 rounded border border-border shrink-0" style={{ backgroundColor: hex }} />
+            <span className="text-muted-foreground">{hex}</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-3" align="start">
+          <HexColorPicker color={hex} onChange={onChange} />
+          <Input
+            className="mt-2"
+            value={hex}
+            onChange={(e) => onChange(e.target.value)}
+            maxLength={7}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+// ========================
+// 1차 카테고리 그룹 관리
+// ========================
+function GroupManager() {
+  const [form, setForm] = useState({ id: "", name: "", sort_order: 0 });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const { data: categories = [], isLoading } = useQuery({
-    queryKey: ["admin-categories"],
+  const { data: groups = [], isLoading } = useQuery({
+    queryKey: ["category-groups"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("*").order("sort_order", { ascending: true });
+      const { data, error } = await supabase.from("category_groups").select("*").order("sort_order");
       if (error) throw error;
       return data;
     },
@@ -49,19 +122,147 @@ export default function AdminCategories() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const payload = { id: form.id, name: form.name, sort_order: form.sort_order };
+      if (editingId) {
+        if (editingId !== form.id) {
+          // Update all categories referencing old group id
+          await supabase.from("categories").update({ parent: form.id }).eq("parent", editingId);
+          await supabase.from("category_groups").delete().eq("id", editingId);
+          const { error } = await supabase.from("category_groups").insert(payload);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("category_groups").update(payload).eq("id", editingId);
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase.from("category_groups").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["category-groups"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      toast({ title: editingId ? "수정 완료" : "추가 완료" });
+      reset();
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // Set children to standalone
+      await supabase.from("categories").update({ parent: null }).eq("parent", id);
+      const { error } = await supabase.from("category_groups").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["category-groups"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      toast({ title: "삭제 완료" });
+    },
+    onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
+  });
+
+  const reset = () => { setForm({ id: "", name: "", sort_order: 0 }); setEditingId(null); setShowForm(false); };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-base flex items-center gap-2">
+          <FolderOpen className="h-5 w-5" /> 1차 카테고리 (폴더)
+        </h3>
+        <Button size="sm" onClick={() => { reset(); setShowForm(true); }}>
+          <Plus className="h-4 w-4 mr-1" /> 추가
+        </Button>
+      </div>
+
+      {showForm && (
+        <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
+          <Input placeholder="ID (영문, 예: basic)" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} disabled={!!editingId} />
+          <Input placeholder="이름 (예: 기본교육과정)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <div>
+            <label className="text-sm text-muted-foreground">정렬 순서</label>
+            <Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => saveMutation.mutate()} disabled={!form.id || !form.name || saveMutation.isPending}>
+              {saveMutation.isPending ? "저장 중..." : "저장"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={reset}>취소</Button>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">로딩 중...</p>
+      ) : groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-4">등록된 폴더가 없습니다.</p>
+      ) : (
+        <div className="space-y-1">
+          {groups.map((g) => (
+            <div key={g.id} className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg">
+              <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-foreground">{g.name}</p>
+                <p className="text-xs text-muted-foreground">ID: {g.id} · 순서: {g.sort_order}</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => { setForm({ id: g.id, name: g.name, sort_order: g.sort_order }); setEditingId(g.id); setShowForm(true); }}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(g.id)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========================
+// 2차 카테고리 관리
+// ========================
+function SubCategoryManager() {
+  const [form, setForm] = useState({ id: "", name: "", color: "#888888", parent: "none", sort_order: 0 });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const { data: groups = [] } = useQuery({
+    queryKey: ["category-groups"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("category_groups").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ["admin-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categories").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const hslColor = form.color.startsWith("#") ? hexToHslString(form.color) : form.color;
+      const hslBg = form.color.startsWith("#") ? hexToBgHslString(form.color) : form.color.replace(/\d+%\)$/, "93%)");
       const payload = {
         id: form.id,
         name: form.name,
-        color: form.color,
-        bg_color: form.bg_color,
-        parent: form.parent || null,
+        color: hslColor,
+        bg_color: hslBg,
+        parent: form.parent === "none" ? null : form.parent,
         sort_order: form.sort_order,
       };
       if (editingId) {
-        // If ID changed, delete old and insert new
         if (editingId !== form.id) {
-          const { error: delErr } = await supabase.from("categories").delete().eq("id", editingId);
-          if (delErr) throw delErr;
+          await supabase.from("categories").delete().eq("id", editingId);
           const { error } = await supabase.from("categories").insert(payload);
           if (error) throw error;
         } else {
@@ -77,7 +278,7 @@ export default function AdminCategories() {
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
       toast({ title: editingId ? "수정 완료" : "추가 완료" });
-      resetForm();
+      reset();
     },
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
@@ -95,85 +296,63 @@ export default function AdminCategories() {
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
 
-  const resetForm = () => {
-    setForm(emptyForm);
-    setEditingId(null);
-    setShowForm(false);
-  };
+  const reset = () => { setForm({ id: "", name: "", color: "#888888", parent: "none", sort_order: 0 }); setEditingId(null); setShowForm(false); };
 
   const startEdit = (cat: typeof categories[0]) => {
     setForm({
       id: cat.id,
       name: cat.name,
-      color: cat.color,
-      bg_color: cat.bg_color,
-      parent: cat.parent ?? "",
+      color: hslStringToHex(cat.color),
+      parent: cat.parent ?? "none",
       sort_order: cat.sort_order,
     });
     setEditingId(cat.id);
     setShowForm(true);
   };
 
-  const basicCats = categories.filter((c) => c.parent === "basic");
-  const electiveCats = categories.filter((c) => c.parent === "elective");
-  const standaloneCats = categories.filter((c) => !c.parent);
-
-  const renderGroup = (title: string, cats: typeof categories) => (
-    <div className="space-y-1">
-      <p className="text-sm font-semibold text-muted-foreground">{title}</p>
-      {cats.map((cat) => (
-        <div key={cat.id} className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg">
-          <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground">{cat.name}</p>
-            <p className="text-xs text-muted-foreground">ID: {cat.id} · 순서: {cat.sort_order}</p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => startEdit(cat)}>
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(cat.id)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
-      ))}
-      {cats.length === 0 && <p className="text-xs text-muted-foreground pl-2">항목 없음</p>}
-    </div>
-  );
+  // Group categories by parent
+  const grouped: { groupId: string; groupName: string; cats: typeof categories }[] = [
+    ...groups.map((g) => ({
+      groupId: g.id,
+      groupName: g.name,
+      cats: categories.filter((c) => c.parent === g.id),
+    })),
+    {
+      groupId: "none",
+      groupName: "독립 카테고리",
+      cats: categories.filter((c) => !c.parent),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">카테고리 관리</h2>
-        <Button onClick={() => { resetForm(); setShowForm(true); }}>
-          <Plus className="h-4 w-4 mr-1" /> 카테고리 추가
+        <h3 className="font-semibold text-base">2차 카테고리 (과목)</h3>
+        <Button size="sm" onClick={() => { reset(); setShowForm(true); }}>
+          <Plus className="h-4 w-4 mr-1" /> 추가
         </Button>
       </div>
 
       {showForm && (
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-          <h3 className="font-semibold">{editingId ? "카테고리 수정" : "새 카테고리 추가"}</h3>
+        <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
           <Input placeholder="ID (영문, 예: math)" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} disabled={!!editingId} />
           <Input placeholder="카테고리 이름" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
-          <Select value={form.parent || "none"} onValueChange={(v) => setForm({ ...form, parent: v === "none" ? "" : v })}>
-            <SelectTrigger><SelectValue placeholder="상위 폴더 선택" /></SelectTrigger>
+          <Select value={form.parent} onValueChange={(v) => setForm({ ...form, parent: v })}>
+            <SelectTrigger><SelectValue placeholder="소속 폴더 선택" /></SelectTrigger>
             <SelectContent>
-              {PARENT_OPTIONS.map((o) => (
-                <SelectItem key={o.value || "none"} value={o.value || "none"}>{o.label}</SelectItem>
+              <SelectItem value="none">없음 (독립)</SelectItem>
+              {groups.map((g) => (
+                <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-muted-foreground">아이콘 색상</label>
-              <Input placeholder="hsl(0,75%,55%)" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} />
-            </div>
-            <div>
-              <label className="text-sm text-muted-foreground">배경 색상</label>
-              <Input placeholder="hsl(0,75%,95%)" value={form.bg_color} onChange={(e) => setForm({ ...form, bg_color: e.target.value })} />
-            </div>
-          </div>
+          <ColorPickerField
+            label="대표 색상"
+            color={form.color}
+            onChange={(hex) => setForm({ ...form, color: hex })}
+          />
 
           <div>
             <label className="text-sm text-muted-foreground">정렬 순서</label>
@@ -181,23 +360,59 @@ export default function AdminCategories() {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={() => saveMutation.mutate()} disabled={!form.id || !form.name || saveMutation.isPending}>
+            <Button size="sm" onClick={() => saveMutation.mutate()} disabled={!form.id || !form.name || saveMutation.isPending}>
               {saveMutation.isPending ? "저장 중..." : "저장"}
             </Button>
-            <Button variant="outline" onClick={resetForm}>취소</Button>
+            <Button size="sm" variant="outline" onClick={reset}>취소</Button>
           </div>
         </div>
       )}
 
       {isLoading ? (
-        <p className="text-muted-foreground">로딩 중...</p>
+        <p className="text-sm text-muted-foreground">로딩 중...</p>
       ) : (
-        <div className="space-y-6">
-          {renderGroup("기본교육과정", basicCats)}
-          {renderGroup("선택중심교육과정", electiveCats)}
-          {renderGroup("독립 카테고리", standaloneCats)}
+        <div className="space-y-5">
+          {grouped.map((group) => (
+            <div key={group.groupId} className="space-y-1">
+              <p className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
+                <ChevronDown className="h-3 w-3" /> {group.groupName}
+              </p>
+              {group.cats.length === 0 ? (
+                <p className="text-xs text-muted-foreground pl-4">항목 없음</p>
+              ) : (
+                group.cats.map((cat) => (
+                  <div key={cat.id} className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg ml-2">
+                    <div className="w-5 h-5 rounded-full shrink-0 border border-border" style={{ backgroundColor: cat.color }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground">{cat.name}</p>
+                      <p className="text-xs text-muted-foreground">ID: {cat.id} · 순서: {cat.sort_order}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => startEdit(cat)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(cat.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ========================
+// Main Export
+// ========================
+export default function AdminCategories() {
+  return (
+    <div className="space-y-8">
+      <GroupManager />
+      <div className="border-t border-border" />
+      <SubCategoryManager />
     </div>
   );
 }
