@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, Trash2, Plus } from "lucide-react";
-import { categories } from "@/data/categories";
+import { useCategories } from "@/hooks/useCategories";
 import type { Tables } from "@/integrations/supabase/types";
 
 const TARGET_OPTIONS = ["초등", "중등", "고등", "전공과"];
@@ -38,6 +38,8 @@ export default function AdminTools() {
   const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
   const qc = useQueryClient();
+
+  const { data: categories = [] } = useCategories();
 
   const { data: tools = [], isLoading } = useQuery({
     queryKey: ["admin-tools"],

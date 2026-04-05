@@ -1,4 +1,4 @@
-import { categories } from "@/data/categories";
+import { useCategories } from "@/hooks/useCategories";
 import CategoryIcon from "./CategoryIcon";
 
 interface CategoryGridProps {
@@ -6,6 +6,7 @@ interface CategoryGridProps {
 }
 
 export default function CategoryGrid({ onSelectCategory }: CategoryGridProps) {
+  const { data: categories = [] } = useCategories();
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">카테고리</h2>
