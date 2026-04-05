@@ -1,6 +1,8 @@
-import { Search, Bookmark, User } from "lucide-react";
+import { Search, Bookmark, User, Shield, LogOut } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface AppHeaderProps {
   searchQuery: string;
@@ -8,6 +10,9 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ searchQuery, onSearchChange }: AppHeaderProps) {
+  const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <header className="h-14 flex items-center gap-3 border-b border-border px-4 bg-card">
       <SidebarTrigger className="shrink-0" />
@@ -32,13 +37,28 @@ export default function AppHeader({ searchQuery, onSearchChange }: AppHeaderProp
         </div>
       </div>
 
+      {isAdmin && (
+        <Button variant="ghost" size="sm" className="shrink-0" onClick={() => navigate("/admin")}>
+          <Shield className="h-4 w-4 mr-1" />
+          관리
+        </Button>
+      )}
+
       <Button variant="ghost" size="icon" className="shrink-0">
         <Bookmark className="h-5 w-5" />
       </Button>
-      <Button variant="outline" size="sm" className="shrink-0">
-        <User className="h-4 w-4 mr-1" />
-        로그인
-      </Button>
+
+      {user ? (
+        <Button variant="outline" size="sm" className="shrink-0" onClick={signOut}>
+          <LogOut className="h-4 w-4 mr-1" />
+          로그아웃
+        </Button>
+      ) : (
+        <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate("/login")}>
+          <User className="h-4 w-4 mr-1" />
+          로그인
+        </Button>
+      )}
     </header>
   );
 }

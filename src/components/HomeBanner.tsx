@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-const banners = [
+const fallbackBanners = [
   {
     title: "2022 특수교육 교육과정 기반 에듀테크 도구 모음",
     subtitle: "특수교육 현장에서 바로 활용할 수 있는 디지털 도구를 탐색하세요.",
@@ -12,22 +14,38 @@ const banners = [
     subtitle: "교과별 맞춤 에듀테크 도구를 지속적으로 추가하고 있습니다.",
     bg: "hsl(195,80%,45%)",
   },
-  {
-    title: "북마크 기능으로 나만의 도구함 만들기",
-    subtitle: "자주 사용하는 도구를 북마크해두고 빠르게 접근하세요.",
-    bg: "hsl(230,55%,45%)",
-  },
 ];
 
 export default function HomeBanner() {
   const [idx, setIdx] = useState(0);
 
+  const { data: dbAnnouncements } = useQuery({
+    queryKey: ["announcements"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("announcements")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const banners = dbAnnouncements && dbAnnouncements.length > 0
+    ? dbAnnouncements.map((a, i) => ({
+        title: a.title,
+        subtitle: a.content ?? "",
+        bg: `hsl(${(215 + i * 20) % 360},80%,50%)`,
+      }))
+    : fallbackBanners;
+
   useEffect(() => {
     const timer = setInterval(() => setIdx((i) => (i + 1) % banners.length), 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [banners.length]);
 
-  const b = banners[idx];
+  const safeIdx = idx % banners.length;
+  const b = banners[safeIdx];
 
   return (
     <div
@@ -55,7 +73,7 @@ export default function HomeBanner() {
           <button
             key={i}
             onClick={() => setIdx(i)}
-            className={`w-2 h-2 rounded-full transition-colors ${i === idx ? "bg-primary-foreground" : "bg-primary-foreground/40"}`}
+            className={`w-2 h-2 rounded-full transition-colors ${i === safeIdx ? "bg-primary-foreground" : "bg-primary-foreground/40"}`}
           />
         ))}
       </div>
