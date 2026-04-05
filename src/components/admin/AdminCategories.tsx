@@ -155,11 +155,11 @@ export default function AdminCategories() {
           <Input placeholder="ID (영문, 예: math)" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} disabled={!!editingId} />
           <Input placeholder="카테고리 이름" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
-          <Select value={form.parent} onValueChange={(v) => setForm({ ...form, parent: v })}>
+          <Select value={form.parent || "none"} onValueChange={(v) => setForm({ ...form, parent: v === "none" ? "" : v })}>
             <SelectTrigger><SelectValue placeholder="상위 폴더 선택" /></SelectTrigger>
             <SelectContent>
               {PARENT_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                <SelectItem key={o.value || "none"} value={o.value || "none"}>{o.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
