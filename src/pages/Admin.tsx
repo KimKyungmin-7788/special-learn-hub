@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminTools from "@/components/admin/AdminTools";
 import AdminAnnouncements from "@/components/admin/AdminAnnouncements";
+import AdminCategories from "@/components/admin/AdminCategories";
 
 export default function Admin() {
   const { user, isAdmin, loading } = useAuth();
@@ -32,10 +33,14 @@ export default function Admin() {
         <Tabs defaultValue="tools">
           <TabsList className="mb-6">
             <TabsTrigger value="tools">도구 관리</TabsTrigger>
+            <TabsTrigger value="categories">카테고리 관리</TabsTrigger>
             <TabsTrigger value="announcements">공지 관리</TabsTrigger>
           </TabsList>
           <TabsContent value="tools">
             <AdminTools />
+          </TabsContent>
+          <TabsContent value="categories">
+            <AdminCategories />
           </TabsContent>
           <TabsContent value="announcements">
             <AdminAnnouncements />

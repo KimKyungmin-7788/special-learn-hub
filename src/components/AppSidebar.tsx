@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import CategoryIcon from "./CategoryIcon";
-import { categories } from "@/data/categories";
+import { useCategories } from "@/hooks/useCategories";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +21,7 @@ interface AppSidebarProps {
 export default function AppSidebar({ selectedCategory, onSelectCategory }: AppSidebarProps) {
   const [basicOpen, setBasicOpen] = useState(true);
   const [electiveOpen, setElectiveOpen] = useState(true);
+  const { data: categories = [] } = useCategories();
 
   const basicCats = categories.filter((c) => c.parent === "basic");
   const electiveCats = categories.filter((c) => c.parent === "elective");
