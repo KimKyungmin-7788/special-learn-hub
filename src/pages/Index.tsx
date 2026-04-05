@@ -1,18 +1,44 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "@/components/AppSidebar";
 import AppHeader from "@/components/AppHeader";
 import HomeBanner from "@/components/HomeBanner";
 import CategoryGrid from "@/components/CategoryGrid";
 import ToolCard from "@/components/ToolCard";
-import { sampleTools } from "@/data/categories";
+import { supabase } from "@/integrations/supabase/client";
+import { sampleTools, type Tool } from "@/data/categories";
 
 export default function Index() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { data: dbTools } = useQuery({
+    queryKey: ["tools"],
+    queryFn: async () => {
+      const { data } = await supabase.from("tools").select("*").order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  // Map DB tools to Tool interface, fallback to sample if DB empty
+  const allTools: Tool[] = useMemo(() => {
+    if (dbTools && dbTools.length > 0) {
+      return dbTools.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        categoryId: t.category_id,
+        targetLevel: t.targets,
+        url: t.url,
+        thumbnail: t.thumbnail_url ?? undefined,
+      }));
+    }
+    return sampleTools;
+  }, [dbTools]);
+
   const filteredTools = useMemo(() => {
-    let tools = sampleTools;
+    let tools = allTools;
     if (selectedCategory) {
       tools = tools.filter((t) => t.categoryId === selectedCategory);
     }
@@ -23,7 +49,7 @@ export default function Index() {
       );
     }
     return tools;
-  }, [selectedCategory, searchQuery]);
+  }, [allTools, selectedCategory, searchQuery]);
 
   const isHome = !selectedCategory && !searchQuery.trim();
 
@@ -43,7 +69,7 @@ export default function Index() {
                 <div>
                   <h2 className="text-lg font-bold text-foreground mb-4">최신 추가 도구</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                    {sampleTools.slice(0, 4).map((tool) => (
+                    {allTools.slice(0, 4).map((tool) => (
                       <ToolCard key={tool.id} tool={tool} />
                     ))}
                   </div>
@@ -54,9 +80,7 @@ export default function Index() {
             {!isHome && (
               <div>
                 <h2 className="text-lg font-bold text-foreground mb-4">
-                  {selectedCategory
-                    ? `${sampleTools.find((t) => t.categoryId === selectedCategory) ? "" : ""}검색 결과`
-                    : "검색 결과"}
+                  검색 결과
                   {filteredTools.length > 0 && (
                     <span className="text-muted-foreground font-normal text-sm ml-2">
                       {filteredTools.length}개
