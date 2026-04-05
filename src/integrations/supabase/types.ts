@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          bg_color: string
+          color: string
+          created_at: string
+          id: string
+          name: string
+          parent: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bg_color?: string
+          color?: string
+          created_at?: string
+          id: string
+          name: string
+          parent?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bg_color?: string
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          parent?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tools: {
         Row: {
           category_id: string
