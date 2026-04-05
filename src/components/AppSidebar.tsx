@@ -1,7 +1,9 @@
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import CategoryIcon from "./CategoryIcon";
 import { useCategories } from "@/hooks/useCategories";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -19,12 +21,21 @@ interface AppSidebarProps {
 }
 
 export default function AppSidebar({ selectedCategory, onSelectCategory }: AppSidebarProps) {
-  const [basicOpen, setBasicOpen] = useState(true);
-  const [electiveOpen, setElectiveOpen] = useState(true);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { data: categories = [] } = useCategories();
 
-  const basicCats = categories.filter((c) => c.parent === "basic");
-  const electiveCats = categories.filter((c) => c.parent === "elective");
+  const { data: groups = [] } = useQuery({
+    queryKey: ["category-groups"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("category_groups").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const toggleGroup = (id: string) => setOpenGroups((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
+  const isOpen = (id: string) => openGroups[id] ?? true;
+
   const standaloneCats = categories.filter((c) => !c.parent);
 
   return (
@@ -42,61 +53,38 @@ export default function AppSidebar({ selectedCategory, onSelectCategory }: AppSi
           </SidebarMenuItem>
         </SidebarMenu>
 
-        {/* 기본교육과정 */}
-        <SidebarGroup>
-          <SidebarGroupLabel
-            className="cursor-pointer select-none flex items-center gap-1"
-            onClick={() => setBasicOpen(!basicOpen)}
-          >
-            <ChevronDown className={`h-4 w-4 transition-transform ${basicOpen ? "" : "-rotate-90"}`} />
-            기본교육과정
-          </SidebarGroupLabel>
-          {basicOpen && (
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {basicCats.map((cat) => (
-                  <SidebarMenuItem key={cat.id}>
-                    <SidebarMenuButton
-                      onClick={() => onSelectCategory(cat.id)}
-                      className={`mx-2 flex items-center gap-2 ${selectedCategory === cat.id ? "bg-accent font-semibold" : ""}`}
-                    >
-                      <CategoryIcon categoryId={cat.id} size={24} />
-                      <span>{cat.name}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          )}
-        </SidebarGroup>
-
-        {/* 선택중심교육과정 */}
-        <SidebarGroup>
-          <SidebarGroupLabel
-            className="cursor-pointer select-none flex items-center gap-1"
-            onClick={() => setElectiveOpen(!electiveOpen)}
-          >
-            <ChevronDown className={`h-4 w-4 transition-transform ${electiveOpen ? "" : "-rotate-90"}`} />
-            선택중심교육과정
-          </SidebarGroupLabel>
-          {electiveOpen && (
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {electiveCats.map((cat) => (
-                  <SidebarMenuItem key={cat.id}>
-                    <SidebarMenuButton
-                      onClick={() => onSelectCategory(cat.id)}
-                      className={`mx-2 flex items-center gap-2 ${selectedCategory === cat.id ? "bg-accent font-semibold" : ""}`}
-                    >
-                      <CategoryIcon categoryId={cat.id} size={24} />
-                      <span>{cat.name}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          )}
-        </SidebarGroup>
+        {/* Dynamic groups */}
+        {groups.map((group) => {
+          const groupCats = categories.filter((c) => c.parent === group.id);
+          return (
+            <SidebarGroup key={group.id}>
+              <SidebarGroupLabel
+                className="cursor-pointer select-none flex items-center gap-1"
+                onClick={() => toggleGroup(group.id)}
+              >
+                <ChevronDown className={`h-4 w-4 transition-transform ${isOpen(group.id) ? "" : "-rotate-90"}`} />
+                {group.name}
+              </SidebarGroupLabel>
+              {isOpen(group.id) && (
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {groupCats.map((cat) => (
+                      <SidebarMenuItem key={cat.id}>
+                        <SidebarMenuButton
+                          onClick={() => onSelectCategory(cat.id)}
+                          className={`mx-2 flex items-center gap-2 ${selectedCategory === cat.id ? "bg-accent font-semibold" : ""}`}
+                        >
+                          <CategoryIcon categoryId={cat.id} size={24} />
+                          <span>{cat.name}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
+            </SidebarGroup>
+          );
+        })}
 
         {/* Standalone */}
         <SidebarMenu>
