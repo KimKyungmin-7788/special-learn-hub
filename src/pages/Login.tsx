@@ -46,21 +46,13 @@ export default function Login() {
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">특</span>
           </div>
-          <h1 className="text-lg font-bold text-foreground">특수교육 에듀테크 허브</h1>
+          <h1 className="text-lg font-bold text-foreground">특수교육 수업자료 센터</h1>
         </div>
 
-        <h2 className="text-center text-xl font-bold mb-6">
-          {isSignUp ? "회원가입" : "로그인"}
-        </h2>
+        <h2 className="text-center text-xl font-bold mb-6">{isSignUp ? "회원가입" : "로그인"}</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            type="email"
-            placeholder="이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <Input type="email" placeholder="이메일" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input
             type="password"
             placeholder="비밀번호 (6자 이상)"
@@ -76,10 +68,7 @@ export default function Login() {
 
         <p className="text-center text-sm text-muted-foreground mt-4">
           {isSignUp ? "이미 계정이 있으신가요?" : "계정이 없으신가요?"}{" "}
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary font-medium hover:underline"
-          >
+          <button onClick={() => setIsSignUp(!isSignUp)} className="text-primary font-medium hover:underline">
             {isSignUp ? "로그인" : "회원가입"}
           </button>
         </p>
