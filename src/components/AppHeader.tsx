@@ -21,7 +21,7 @@ export default function AppHeader({ searchQuery, onSearchChange }: AppHeaderProp
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
           <span className="text-primary-foreground font-bold text-sm">특</span>
         </div>
-        <h1 className="text-base font-bold text-foreground whitespace-nowrap">특수교육 에듀테크 허브</h1>
+        <h1 className="text-base font-bold text-foreground whitespace-nowrap">특수교육 수업자료 센터</h1>
       </div>
 
       <div className="flex-1 max-w-md mx-auto">
