@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Pretendard", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        heading: ["Montserrat", "Pretendard", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

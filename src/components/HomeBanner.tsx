@@ -7,7 +7,7 @@ const fallbackBanners = [
   {
     title: "2022 특수교육 교육과정 기반 에듀테크 도구 모음",
     subtitle: "특수교육 현장에서 바로 활용할 수 있는 디지털 도구를 탐색하세요.",
-    bg: "hsl(215,80%,50%)",
+    bg: "hsl(215,85%,50%)",
   },
   {
     title: "새로운 도구가 매주 업데이트됩니다",
@@ -18,6 +18,7 @@ const fallbackBanners = [
 
 export default function HomeBanner() {
   const [idx, setIdx] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const { data: dbAnnouncements } = useQuery({
     queryKey: ["announcements"],
@@ -40,31 +41,39 @@ export default function HomeBanner() {
     : fallbackBanners;
 
   useEffect(() => {
-    const timer = setInterval(() => setIdx((i) => (i + 1) % banners.length), 5000);
+    const timer = setInterval(() => changeSlide((i) => (i + 1) % banners.length), 5000);
     return () => clearInterval(timer);
   }, [banners.length]);
+
+  const changeSlide = (updater: (i: number) => number) => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setIdx(updater);
+      setIsTransitioning(false);
+    }, 250);
+  };
 
   const safeIdx = idx % banners.length;
   const b = banners[safeIdx];
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden transition-colors duration-500"
+      className="relative rounded-2xl overflow-hidden transition-colors duration-500 animate-fade-in-up"
       style={{ backgroundColor: b.bg }}
     >
-      <div className="px-8 py-10 text-primary-foreground">
-        <h2 className="text-2xl font-bold mb-2">{b.title}</h2>
+      <div className={`px-8 py-10 text-primary-foreground transition-all duration-300 ${isTransitioning ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
+        <h2 className="text-2xl font-bold mb-2 font-heading">{b.title}</h2>
         <p className="text-primary-foreground/80">{b.subtitle}</p>
       </div>
       <button
-        onClick={() => setIdx((i) => (i - 1 + banners.length) % banners.length)}
-        className="absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground"
+        onClick={() => changeSlide((i) => (i - 1 + banners.length) % banners.length)}
+        className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground transition-all duration-200 hover:scale-110 active:scale-90"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
       <button
-        onClick={() => setIdx((i) => (i + 1) % banners.length)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground"
+        onClick={() => changeSlide((i) => (i + 1) % banners.length)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground transition-all duration-200 hover:scale-110 active:scale-90"
       >
         <ChevronRight className="h-5 w-5" />
       </button>
@@ -72,8 +81,8 @@ export default function HomeBanner() {
         {banners.map((_, i) => (
           <button
             key={i}
-            onClick={() => setIdx(i)}
-            className={`w-2 h-2 rounded-full transition-colors ${i === safeIdx ? "bg-primary-foreground" : "bg-primary-foreground/40"}`}
+            onClick={() => { setIsTransitioning(true); setTimeout(() => { setIdx(i); setIsTransitioning(false); }, 250); }}
+            className={`rounded-full transition-all duration-300 ${i === safeIdx ? "bg-primary-foreground w-6 h-2" : "bg-primary-foreground/40 w-2 h-2 hover:bg-primary-foreground/60"}`}
           />
         ))}
       </div>
