@@ -49,6 +49,7 @@ export type Database = {
           bg_color: string
           color: string
           created_at: string
+          icon: string | null
           id: string
           name: string
           parent: string | null
@@ -59,6 +60,7 @@ export type Database = {
           bg_color?: string
           color?: string
           created_at?: string
+          icon?: string | null
           id: string
           name: string
           parent?: string | null
@@ -69,6 +71,7 @@ export type Database = {
           bg_color?: string
           color?: string
           created_at?: string
+          icon?: string | null
           id?: string
           name?: string
           parent?: string | null
