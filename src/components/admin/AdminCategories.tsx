@@ -194,7 +194,7 @@ function GroupManager({ onDirty }: { onDirty: () => void }) {
 // 2차 카테고리 관리
 // ========================
 function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
-  const [form, setForm] = useState({ id: "", name: "", color: "#888888", parent: "none", sort_order: 0 });
+  const [form, setForm] = useState({ id: "", name: "", color: "#888888", icon: "folder", parent: "none", sort_order: 0 });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
@@ -228,7 +228,7 @@ function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
     mutationFn: async () => {
       const hslColor = form.color.startsWith("#") ? hexToHslString(form.color) : form.color;
       const hslBg = form.color.startsWith("#") ? hexToBgHslString(form.color) : form.color.replace(/\d+%\)$/, "93%)");
-      const payload = { id: form.id, name: form.name, color: hslColor, bg_color: hslBg, parent: form.parent === "none" ? null : form.parent, sort_order: form.sort_order };
+      const payload = { id: form.id, name: form.name, color: hslColor, bg_color: hslBg, icon: form.icon, parent: form.parent === "none" ? null : form.parent, sort_order: form.sort_order };
       if (editingId) {
         if (editingId !== form.id) {
           await supabase.from("categories").delete().eq("id", editingId);
@@ -265,10 +265,10 @@ function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
 
-  const reset = () => { setForm({ id: "", name: "", color: "#888888", parent: "none", sort_order: 0 }); setEditingId(null); setShowForm(false); };
+  const reset = () => { setForm({ id: "", name: "", color: "#888888", icon: "folder", parent: "none", sort_order: 0 }); setEditingId(null); setShowForm(false); };
 
-  const startEdit = (cat: typeof categories[0]) => {
-    setForm({ id: cat.id, name: cat.name, color: hslStringToHex(cat.color), parent: cat.parent ?? "none", sort_order: cat.sort_order });
+  const startEdit = (cat: any) => {
+    setForm({ id: cat.id, name: cat.name, color: hslStringToHex(cat.color), icon: cat.icon ?? "folder", parent: cat.parent ?? "none", sort_order: cat.sort_order });
     setEditingId(cat.id);
     openForm();
   };
