@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Upload, X } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -36,6 +36,8 @@ export default function AdminTools() {
   const [form, setForm] = useState<ToolForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -49,6 +51,40 @@ export default function AdminTools() {
       return data as ToolRow[];
     },
   });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "이미지 파일만 업로드 가능합니다.", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("thumbnails")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("thumbnails")
+        .getPublicUrl(fileName);
+
+      setForm((f) => ({ ...f, thumbnail_url: urlData.publicUrl }));
+      toast({ title: "이미지 업로드 완료" });
+    } catch (err: any) {
+      toast({ title: "업로드 실패", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -123,7 +159,53 @@ export default function AdminTools() {
           <Input placeholder="도구 이름" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Textarea placeholder="설명" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           <Input placeholder="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
-          <Input placeholder="썸네일 URL (선택)" value={form.thumbnail_url} onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })} />
+
+          {/* 썸네일 업로드 영역 */}
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">썸네일 이미지</p>
+            <div className="flex gap-2 items-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                <Upload className="h-4 w-4 mr-1" />
+                {uploading ? "업로드 중..." : "이미지 업로드"}
+              </Button>
+              <span className="text-xs text-muted-foreground">또는</span>
+              <Input
+                placeholder="썸네일 URL 직접 입력"
+                value={form.thumbnail_url}
+                onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
+                className="flex-1"
+              />
+            </div>
+            {form.thumbnail_url && (
+              <div className="relative inline-block">
+                <img
+                  src={form.thumbnail_url}
+                  alt="썸네일 미리보기"
+                  className="h-20 w-20 object-cover rounded-lg border border-border"
+                />
+                <button
+                  type="button"
+                  className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                  onClick={() => setForm({ ...form, thumbnail_url: "" })}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+          </div>
 
           <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
             <SelectTrigger><SelectValue placeholder="카테고리 선택" /></SelectTrigger>
@@ -168,6 +250,9 @@ export default function AdminTools() {
         <div className="space-y-2">
           {tools.map((tool) => (
             <div key={tool.id} className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg">
+              {tool.thumbnail_url && (
+                <img src={tool.thumbnail_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-foreground truncate">{tool.name}</p>
                 <p className="text-sm text-muted-foreground truncate">{tool.description}</p>
