@@ -8,6 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Pencil, Trash2, Plus, ChevronDown, FolderOpen, RefreshCw } from "lucide-react";
 import { HexColorPicker } from "react-colorful";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+
+library.add(fas);
 
 // --- HSL <-> Hex ---
 function hslStringToHex(hsl: string): string {
