@@ -39,6 +39,14 @@ function hexToHsl(hex: string) {
 function hexToHslString(hex: string) { const {h,s,l}=hexToHsl(hex); return `hsl(${h},${s}%,${l}%)`; }
 function hexToBgHslString(hex: string) { const {h,s}=hexToHsl(hex); return `hsl(${h},${s}%,93%)`; }
 
+const ICON_OPTIONS = [
+  "book", "calculator", "globe", "flask", "running", "music", "palette", "star",
+  "briefcase", "home", "cog", "book-open", "bell", "chalkboard-teacher", "pen",
+  "microscope", "laptop", "paint-brush", "users", "heart", "lightbulb", "graduation-cap",
+  "atom", "puzzle-piece", "hands-helping", "tools", "seedling", "utensils", "folder",
+  "desktop", "camera", "headphones", "gamepad", "language", "volleyball-ball",
+];
+
 // --- Color Picker ---
 function ColorPickerField({ label, color, onChange }: { label: string; color: string; onChange: (hex: string) => void }) {
   const hex = color.startsWith("#") ? color : hslStringToHex(color);
