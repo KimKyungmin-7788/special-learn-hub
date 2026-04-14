@@ -8,6 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Pencil, Trash2, Plus, ChevronDown, FolderOpen, RefreshCw } from "lucide-react";
 import { HexColorPicker } from "react-colorful";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+
+library.add(fas);
 
 // --- HSL <-> Hex ---
 function hslStringToHex(hsl: string): string {
@@ -33,6 +38,14 @@ function hexToHsl(hex: string) {
 }
 function hexToHslString(hex: string) { const {h,s,l}=hexToHsl(hex); return `hsl(${h},${s}%,${l}%)`; }
 function hexToBgHslString(hex: string) { const {h,s}=hexToHsl(hex); return `hsl(${h},${s}%,93%)`; }
+
+const ICON_OPTIONS = [
+  "book", "calculator", "globe", "flask", "running", "music", "palette", "star",
+  "briefcase", "home", "cog", "book-open", "bell", "chalkboard-teacher", "pen",
+  "microscope", "laptop", "paint-brush", "users", "heart", "lightbulb", "graduation-cap",
+  "atom", "puzzle-piece", "hands-helping", "tools", "seedling", "utensils", "folder",
+  "desktop", "camera", "headphones", "gamepad", "language", "volleyball-ball",
+];
 
 // --- Color Picker ---
 function ColorPickerField({ label, color, onChange }: { label: string; color: string; onChange: (hex: string) => void }) {
@@ -181,7 +194,7 @@ function GroupManager({ onDirty }: { onDirty: () => void }) {
 // 2차 카테고리 관리
 // ========================
 function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
-  const [form, setForm] = useState({ id: "", name: "", color: "#888888", parent: "none", sort_order: 0 });
+  const [form, setForm] = useState({ id: "", name: "", color: "#888888", icon: "folder", parent: "none", sort_order: 0 });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
@@ -215,7 +228,7 @@ function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
     mutationFn: async () => {
       const hslColor = form.color.startsWith("#") ? hexToHslString(form.color) : form.color;
       const hslBg = form.color.startsWith("#") ? hexToBgHslString(form.color) : form.color.replace(/\d+%\)$/, "93%)");
-      const payload = { id: form.id, name: form.name, color: hslColor, bg_color: hslBg, parent: form.parent === "none" ? null : form.parent, sort_order: form.sort_order };
+      const payload = { id: form.id, name: form.name, color: hslColor, bg_color: hslBg, icon: form.icon, parent: form.parent === "none" ? null : form.parent, sort_order: form.sort_order };
       if (editingId) {
         if (editingId !== form.id) {
           await supabase.from("categories").delete().eq("id", editingId);
@@ -252,10 +265,10 @@ function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
     onError: (e: Error) => toast({ title: "오류", description: e.message, variant: "destructive" }),
   });
 
-  const reset = () => { setForm({ id: "", name: "", color: "#888888", parent: "none", sort_order: 0 }); setEditingId(null); setShowForm(false); };
+  const reset = () => { setForm({ id: "", name: "", color: "#888888", icon: "folder", parent: "none", sort_order: 0 }); setEditingId(null); setShowForm(false); };
 
-  const startEdit = (cat: typeof categories[0]) => {
-    setForm({ id: cat.id, name: cat.name, color: hslStringToHex(cat.color), parent: cat.parent ?? "none", sort_order: cat.sort_order });
+  const startEdit = (cat: any) => {
+    setForm({ id: cat.id, name: cat.name, color: hslStringToHex(cat.color), icon: cat.icon ?? "folder", parent: cat.parent ?? "none", sort_order: cat.sort_order });
     setEditingId(cat.id);
     openForm();
   };
@@ -283,7 +296,9 @@ function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
                 <p className="text-xs text-muted-foreground pl-4">항목 없음</p>
               ) : group.cats.map((cat) => (
                 <div key={cat.id} className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg ml-2">
-                  <div className="w-5 h-5 rounded-full shrink-0 border border-border" style={{ backgroundColor: cat.color }} />
+                  <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center" style={{ backgroundColor: cat.color }}>
+                    <FontAwesomeIcon icon={["fas", (cat as any).icon ?? "folder"]} className="text-white" style={{ fontSize: 12 }} />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground">{cat.name}</p>
                     <p className="text-xs text-muted-foreground">ID: {cat.id} · 순서: {cat.sort_order}</p>
@@ -310,6 +325,22 @@ function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
             </SelectContent>
           </Select>
           <ColorPickerField label="대표 색상" color={form.color} onChange={(hex) => setForm({ ...form, color: hex })} />
+          <div>
+            <label className="text-sm text-muted-foreground mb-2 block">아이콘 선택</label>
+            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border border-border rounded-md bg-background">
+              {ICON_OPTIONS.map((ic) => (
+                <button
+                  key={ic}
+                  type="button"
+                  onClick={() => setForm({ ...form, icon: ic })}
+                  className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors ${form.icon === ic ? "bg-primary text-primary-foreground" : "hover:bg-accent text-muted-foreground"}`}
+                  title={ic}
+                >
+                  <FontAwesomeIcon icon={["fas", ic as any]} size="lg" />
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <label className="text-sm text-muted-foreground">정렬 순서</label>
             <Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} />
