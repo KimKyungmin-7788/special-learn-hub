@@ -18,7 +18,15 @@ export default function ToolCard({ tool }: ToolCardProps) {
         className="h-36 flex items-center justify-center overflow-hidden"
         style={{ backgroundColor: cat?.bgColor ?? "hsl(215,20%,95%)" }}
       >
-        <CategoryIcon categoryId={tool.categoryId} size={64} />
+        {tool.thumbnail ? (
+          <img
+            src={tool.thumbnail}
+            alt={tool.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <CategoryIcon categoryId={tool.categoryId} size={64} />
+        )}
       </div>
 
       <div className="p-4 flex flex-col flex-1 gap-2">
