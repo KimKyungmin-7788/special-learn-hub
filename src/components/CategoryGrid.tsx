@@ -17,7 +17,7 @@ export default function CategoryGrid({ onSelectCategory }: CategoryGridProps) {
             onClick={() => onSelectCategory(cat.id)}
             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-accent transition-colors group"
           >
-            <CategoryIcon categoryId={cat.id} size={56} />
+            <CategoryIcon categoryId={cat.id} size={56} icon={cat.icon} color={cat.color} />
             <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground text-center leading-tight">
               {cat.name}
             </span>

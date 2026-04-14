@@ -74,7 +74,7 @@ export default function AppSidebar({ selectedCategory, onSelectCategory }: AppSi
                           onClick={() => onSelectCategory(cat.id)}
                           className={`mx-2 flex items-center gap-2 ${selectedCategory === cat.id ? "bg-accent font-semibold" : ""}`}
                         >
-                          <CategoryIcon categoryId={cat.id} size={24} />
+                          <CategoryIcon categoryId={cat.id} size={24} icon={cat.icon} color={cat.color} />
                           <span>{cat.name}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -94,7 +94,7 @@ export default function AppSidebar({ selectedCategory, onSelectCategory }: AppSi
                 onClick={() => onSelectCategory(cat.id)}
                 className={`mx-2 flex items-center gap-2 ${selectedCategory === cat.id ? "bg-accent font-semibold" : ""}`}
               >
-                <CategoryIcon categoryId={cat.id} size={24} />
+                <CategoryIcon categoryId={cat.id} size={24} icon={cat.icon} color={cat.color} />
                 <span>{cat.name}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
