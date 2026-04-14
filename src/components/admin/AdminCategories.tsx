@@ -326,6 +326,22 @@ function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
           </Select>
           <ColorPickerField label="대표 색상" color={form.color} onChange={(hex) => setForm({ ...form, color: hex })} />
           <div>
+            <label className="text-sm text-muted-foreground mb-2 block">아이콘 선택</label>
+            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border border-border rounded-md bg-background">
+              {ICON_OPTIONS.map((ic) => (
+                <button
+                  key={ic}
+                  type="button"
+                  onClick={() => setForm({ ...form, icon: ic })}
+                  className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors ${form.icon === ic ? "bg-primary text-primary-foreground" : "hover:bg-accent text-muted-foreground"}`}
+                  title={ic}
+                >
+                  <FontAwesomeIcon icon={["fas", ic as any]} size="lg" />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
             <label className="text-sm text-muted-foreground">정렬 순서</label>
             <Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} />
           </div>
