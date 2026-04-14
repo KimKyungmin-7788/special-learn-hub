@@ -21,7 +21,6 @@ export default function Index() {
     },
   });
 
-  // Map DB tools to Tool interface, fallback to sample if DB empty
   const allTools: Tool[] = useMemo(() => {
     if (dbTools && dbTools.length > 0) {
       return dbTools.map((t) => ({
@@ -55,7 +54,7 @@ export default function Index() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -66,9 +65,9 @@ export default function Index() {
               <>
                 <HomeBanner />
                 <CategoryGrid onSelectCategory={setSelectedCategory} />
-                <div>
-                  <h2 className="text-lg font-bold text-foreground mb-4">최신 추가 도구</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <div className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+                  <h2 className="text-lg font-bold text-foreground mb-4 font-heading">최신 추가 도구</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 stagger-children">
                     {allTools.slice(0, 4).map((tool) => (
                       <ToolCard key={tool.id} tool={tool} />
                     ))}
@@ -78,8 +77,8 @@ export default function Index() {
             )}
 
             {!isHome && (
-              <div>
-                <h2 className="text-lg font-bold text-foreground mb-4">
+              <div className="animate-fade-in-up">
+                <h2 className="text-lg font-bold text-foreground mb-4 font-heading">
                   검색 결과
                   {filteredTools.length > 0 && (
                     <span className="text-muted-foreground font-normal text-sm ml-2">
@@ -88,7 +87,7 @@ export default function Index() {
                   )}
                 </h2>
                 {filteredTools.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 stagger-children">
                     {filteredTools.map((tool) => (
                       <ToolCard key={tool.id} tool={tool} />
                     ))}

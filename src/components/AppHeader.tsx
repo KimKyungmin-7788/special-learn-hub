@@ -14,47 +14,47 @@ export default function AppHeader({ searchQuery, onSearchChange }: AppHeaderProp
   const navigate = useNavigate();
 
   return (
-    <header className="h-14 flex items-center gap-3 border-b border-border px-4 bg-card">
-      <SidebarTrigger className="shrink-0" />
+    <header className="h-14 flex items-center gap-3 border-b border-border px-4 bg-card backdrop-blur-sm">
+      <SidebarTrigger className="shrink-0 transition-transform duration-200 hover:scale-110 active:scale-90" />
 
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-          <span className="text-primary-foreground font-bold text-sm">특</span>
+        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/20">
+          <span className="text-primary-foreground font-bold text-sm font-heading">특</span>
         </div>
-        <h1 className="text-base font-bold text-foreground whitespace-nowrap">특수교육 수업자료 센터</h1>
+        <h1 className="text-base font-bold text-foreground whitespace-nowrap font-heading">특수교육 수업자료 센터</h1>
       </div>
 
       <div className="flex-1 max-w-md mx-auto">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors duration-200 group-focus-within:text-primary" />
           <input
             type="text"
             placeholder="도구 검색..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full h-9 pl-9 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-9 pl-9 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200 focus:shadow-md focus:shadow-primary/10"
           />
         </div>
       </div>
 
       {isAdmin && (
-        <Button variant="ghost" size="sm" className="shrink-0" onClick={() => navigate("/admin")}>
+        <Button variant="ghost" size="sm" className="shrink-0 transition-all duration-200 hover:scale-105 active:scale-95" onClick={() => navigate("/admin")}>
           <Shield className="h-4 w-4 mr-1" />
           관리
         </Button>
       )}
 
-      <Button variant="ghost" size="icon" className="shrink-0">
+      <Button variant="ghost" size="icon" className="shrink-0 transition-all duration-200 hover:scale-110 hover:text-primary active:scale-90">
         <Bookmark className="h-5 w-5" />
       </Button>
 
       {user ? (
-        <Button variant="outline" size="sm" className="shrink-0" onClick={signOut}>
+        <Button variant="outline" size="sm" className="shrink-0 transition-all duration-200 hover:scale-105 active:scale-95" onClick={signOut}>
           <LogOut className="h-4 w-4 mr-1" />
           로그아웃
         </Button>
       ) : (
-        <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate("/login")}>
+        <Button variant="outline" size="sm" className="shrink-0 transition-all duration-200 hover:scale-105 active:scale-95" onClick={() => navigate("/login")}>
           <User className="h-4 w-4 mr-1" />
           로그인
         </Button>
