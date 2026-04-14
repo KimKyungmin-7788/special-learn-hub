@@ -296,7 +296,9 @@ function SubCategoryManager({ onDirty }: { onDirty: () => void }) {
                 <p className="text-xs text-muted-foreground pl-4">항목 없음</p>
               ) : group.cats.map((cat) => (
                 <div key={cat.id} className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg ml-2">
-                  <div className="w-5 h-5 rounded-full shrink-0 border border-border" style={{ backgroundColor: cat.color }} />
+                  <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center" style={{ backgroundColor: cat.color }}>
+                    <FontAwesomeIcon icon={["fas", (cat as any).icon ?? "folder"]} className="text-white" style={{ fontSize: 12 }} />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground">{cat.name}</p>
                     <p className="text-xs text-muted-foreground">ID: {cat.id} · 순서: {cat.sort_order}</p>
