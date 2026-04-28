@@ -118,6 +118,24 @@ export default function Login() {
           특수교사라면 누구나 참여할 수 있어요
         </p>
 
+        {/* 임시: 로그인 없이 입장하기 (추후 로그인 활성화 시 제거 가능) */}
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            width: "100%", padding: "13px 16px", borderRadius: 10,
+            background: "linear-gradient(90deg, #5592FC, #05EEA9)",
+            border: "none", color: "white", fontSize: 15,
+            fontWeight: 600, cursor: "pointer",
+            boxShadow: "0 6px 18px rgba(85, 146, 252, 0.25)",
+            marginBottom: 8,
+          }}
+        >
+          입장하기
+        </button>
+        <p style={{ fontSize: 12, color: "#aaa", textAlign: "center", margin: "0 0 1.5rem" }}>
+          로그인 없이 둘러보기 (베타 기간)
+        </p>
+
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: "1.5rem" }}>
 
           <button
